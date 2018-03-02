@@ -73,9 +73,6 @@ int main() {
 	ioctl(fb_fd, FBIOGET_VSCREENINFO, &vinfo);	
 	ioctl(fb_fd, FBIOGET_FSCREENINFO, &finfo);	
 
-	print_finfo(finfo);
-	print_vinfo(vinfo);
-
 	long screen_size = vinfo.yres_virtual * finfo.line_length;
 	uint8_t* fbp = mmap(0, screen_size, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, (off_t)0);
 
