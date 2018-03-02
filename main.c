@@ -19,6 +19,11 @@ struct color {
     uint8_t blue;
 };
 
+struct bounds {
+    int width;
+    int height;
+};
+
 int fb_fd;
 
 void failed(const char* failstr) {
@@ -50,28 +55,29 @@ void signal_handler(int sig) {
 	exit(0);
 }
 
-void render_pixel(uint8_t* fbp, struct fb_var_screeninfo* vinfo, int x, int y, struct color* c) {
-    uint32_t width = vinfo->xres_virtual; 
+void render_pixel(uint8_t* fbp, struct fb_var_screeninfo* vinfo, int x, int y, struct color* c, uint32_t line_length) {
+    int width = vinfo->xres_virtual; 
     int bytes_per_pixel = (int)vinfo->bits_per_pixel / 8;
-    int location = (y * width * bytes_per_pixel) + x * bytes_per_pixel;
+    int location = x * bytes_per_pixel + (y * line_length);
     *((uint32_t*)(fbp + location)) = pixel_color(c->red, c->green, c->blue, vinfo);
 }
 
-void draw_random_pixels(uint8_t* fbp, struct fb_var_screeninfo* vinfo) {
+void draw_random_pixels(uint8_t* fbp, struct fb_var_screeninfo* vinfo, struct fb_fix_screeninfo *finfo) {
     int width = vinfo->xres_virtual;
     int height = vinfo->yres_virtual;
+    printf("width: %d\n", width);
     for (;;) {
 	struct color c;
 	c.red = rand() % 255;
 	c.green = rand() % 255;
 	c.blue = rand() % 255;
-	int x = rand() % width;
-	int y = rand() % height;
-	render_pixel(fbp, vinfo, x, y, &c);
+	int x = 200 + rand() % 500;
+	int y = 100 + rand() % 100;
+	render_pixel(fbp, vinfo, x, y, &c, finfo->line_length);
     }
 }
 
-void print_png_data(const char* filename) {
+png_bytep* read_png_data(const char* filename, struct bounds* b) {
     FILE* fp = fopen(filename, "r");
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (!png) {
@@ -93,22 +99,30 @@ void print_png_data(const char* filename) {
     png_bytep* row_pointers;
     int width = png_get_image_width(png, info);
     int height = png_get_image_width(png, info);
+    b->width = width;
+    b->height = height;
     row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
     for (int i = 0; i < height; i++) {
 	row_pointers[i] = (png_byte*)malloc(png_get_rowbytes(png, info));
     }
     png_read_image(png, row_pointers);
 
-    // draw image
+    fclose(fp);
+    return row_pointers;
+}
+
+void draw_png_data(uint8_t* fbp, struct fb_var_screeninfo* vinfo, struct fb_fix_screeninfo* finfo, png_bytep* row_pointers, int width, int height) {
     for (int i = 0; i < height; i++) {
 	png_bytep row = row_pointers[i];
 	for (int j = 0; j < width; j++) {
 	    png_bytep px = &(row[j * 4]); 
-	    printf("%d %d %d %d\n", px[1], px[2], px[3], px[4]);
+	    struct color c;
+	    c.red = px[0];
+	    c.green = px[1];
+	    c.blue = px[2];
+	    render_pixel(fbp, vinfo, j, i, &c, finfo->line_length);
 	}
     }
-
-    fclose(fp);
 }
 
 int main(int argc, const char** argv) {
@@ -127,7 +141,10 @@ int main(int argc, const char** argv) {
 	    exit(1);
 	}
 	const char* image_path = argv[1];
-	print_png_data(image_path);
+	struct bounds b;
+	png_bytep* row_pointers = read_png_data(image_path, &b);
+	draw_png_data(fbp, &vinfo, &finfo, row_pointers, b.width, b.height);
+	//draw_random_pixels(fbp, &vinfo, &finfo);
 
 	return 0;
 }
