@@ -51,6 +51,20 @@ void render_pixel(uint8_t* fbp, struct fb_var_screeninfo* vinfo, int x, int y, s
     *((uint32_t*)(fbp + location)) = pixel_color(c->red, c->green, c->blue, vinfo);
 }
 
+void draw_random_pixels(uint8_t* fbp, struct fb_var_screeninfo* vinfo) {
+    int width = vinfo->xres_virtual;
+    int height = vinfo->yres_virtual;
+    for (;;) {
+	struct color c;
+	c.red = rand() % 255;
+	c.green = rand() % 255;
+	c.blue = rand() % 255;
+	int x = rand() % width;
+	int y = rand() % height;
+	render_pixel(fbp, vinfo, x, y, &c);
+    }
+}
+
 int main() {
 	struct fb_fix_screeninfo finfo;
 	struct fb_var_screeninfo vinfo;
@@ -65,17 +79,7 @@ int main() {
 	long screen_size = vinfo.yres_virtual * finfo.line_length;
 	uint8_t* fbp = mmap(0, screen_size, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, (off_t)0);
 
-	int width = vinfo.xres_virtual;
-	int height = vinfo.yres_virtual;
-	for (;;) {
-	    struct color c;
-	    c.red = rand() % 255;
-	    c.green = rand() % 255;
-	    c.blue = rand() % 255;
-	    int x = rand() % width;
-	    int y = rand() % height;
-	    render_pixel(fbp, &vinfo, x, y, &c);
-	}
+	draw_random_pixels(fbp, &vinfo);
 
 	return 0;
 }
