@@ -65,17 +65,16 @@ int main() {
 	long screen_size = vinfo.yres_virtual * finfo.line_length;
 	uint8_t* fbp = mmap(0, screen_size, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, (off_t)0);
 
+	int width = vinfo.xres_virtual;
+	int height = vinfo.yres_virtual;
 	for (;;) {
-		for (int i = 0; i < vinfo.yres_virtual; i++) {
-			for (int j = 0; j < vinfo.xres_virtual; j++) {
-				struct color c;
-				c.red = rand() % 255;
-				c.green = rand() % 255;
-				c.blue = rand() % 255;
-				render_pixel(fbp, &vinfo, j, i, &c);
-			}
-		}
-		sleep(3);
+	    struct color c;
+	    c.red = rand() % 255;
+	    c.green = rand() % 255;
+	    c.blue = rand() % 255;
+	    int x = rand() % width;
+	    int y = rand() % height;
+	    render_pixel(fbp, &vinfo, x, y, &c);
 	}
 
 	return 0;
