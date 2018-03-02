@@ -20,7 +20,7 @@ uint32_t pixel_color(uint8_t r, uint8_t g, uint8_t b, struct fb_var_screeninfo* 
 
 void print_finfo(struct fb_fix_screeninfo finfo) {
 	printf("id string: %s\n", finfo.id);
-	printf("smem_start: %u\n", finfo.smem_start);
+	printf("smem_start: %lu\n", finfo.smem_start);
 	printf("smem_len: %u\n", finfo.smem_len);
 	printf("line_length: %u\n", finfo.line_length);
 }
