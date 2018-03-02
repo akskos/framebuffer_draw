@@ -87,10 +87,27 @@ void print_png_data(const char* filename) {
     }
     png_init_io(png, fp);
     png_read_info(png, info);
+    png_set_palette_to_rgb(png);
+    png_set_filler(png, 0xff, PNG_FILLER_AFTER);
+    png_read_update_info(png, info);
+    png_bytep* row_pointers;
     int width = png_get_image_width(png, info);
     int height = png_get_image_width(png, info);
-    printf("width: %d\n", width);
-    printf("height: %d\n", height);
+    row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
+    for (int i = 0; i < height; i++) {
+	row_pointers[i] = (png_byte*)malloc(png_get_rowbytes(png, info));
+    }
+    png_read_image(png, row_pointers);
+
+    // draw image
+    for (int i = 0; i < height; i++) {
+	png_bytep row = row_pointers[i];
+	for (int j = 0; j < width; j++) {
+	    png_bytep px = &(row[j * 4]); 
+	    printf("%d %d %d %d\n", px[1], px[2], px[3], px[4]);
+	}
+    }
+
     fclose(fp);
 }
 
