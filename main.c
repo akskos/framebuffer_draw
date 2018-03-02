@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <signal.h>
+#include <png.h>
 
 struct color {
     uint8_t red;
@@ -19,6 +20,11 @@ struct color {
 };
 
 int fb_fd;
+
+void failed(const char* failstr) {
+    fprintf(stderr, "failed %s\n", failstr);
+    exit(1);
+}
 
 uint32_t pixel_color(uint8_t r, uint8_t g, uint8_t b, struct fb_var_screeninfo* vinfo) {
 	return (r << vinfo->red.offset) | (g << vinfo->green.offset) | (b << vinfo->blue.offset);
@@ -65,7 +71,30 @@ void draw_random_pixels(uint8_t* fbp, struct fb_var_screeninfo* vinfo) {
     }
 }
 
-int main() {
+void print_png_data(const char* filename) {
+    FILE* fp = fopen(filename, "r");
+    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png) {
+	failed("to create png read struct");
+    }
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+	failed("to create png info struct");
+    }
+    int rv = setjmp(png_jmpbuf(png));
+    if (rv) {
+	failed("to setjmp");
+    }
+    png_init_io(png, fp);
+    png_read_info(png, info);
+    int width = png_get_image_width(png, info);
+    int height = png_get_image_width(png, info);
+    printf("width: %d\n", width);
+    printf("height: %d\n", height);
+    fclose(fp);
+}
+
+int main(int argc, const char** argv) {
 	struct fb_fix_screeninfo finfo;
 	struct fb_var_screeninfo vinfo;
 
@@ -76,7 +105,12 @@ int main() {
 	long screen_size = vinfo.yres_virtual * finfo.line_length;
 	uint8_t* fbp = mmap(0, screen_size, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, (off_t)0);
 
-	draw_random_pixels(fbp, &vinfo);
+	if (argc != 2) {
+	    fprintf(stderr, "one argument requred\n");
+	    exit(1);
+	}
+	const char* image_path = argv[1];
+	print_png_data(image_path);
 
 	return 0;
 }

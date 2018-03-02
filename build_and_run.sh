@@ -3,6 +3,6 @@
 make
 if [ $? -eq 0 ]; then
     tput civis
-    sudo ./bin/fb
+    sudo ./bin/fb $IMAGEPATH
     tput cnorm
 fi
