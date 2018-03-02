@@ -46,7 +46,6 @@ void signal_handler(int sig) {
 
 void render_pixel(uint8_t* fbp, struct fb_var_screeninfo* vinfo, int x, int y, struct color* c) {
     uint32_t width = vinfo->xres_virtual; 
-    // uint32_t height = vinfo.yres_virtual; 
     int bytes_per_pixel = (int)vinfo->bits_per_pixel / 8;
     int location = (y * width * bytes_per_pixel) + x * bytes_per_pixel;
     *((uint32_t*)(fbp + location)) = pixel_color(c->red, c->green, c->blue, vinfo);
@@ -69,14 +68,11 @@ int main() {
 	for (;;) {
 		for (int i = 0; i < vinfo.yres_virtual; i++) {
 			for (int j = 0; j < vinfo.xres_virtual; j++) {
-				int offset = i * vinfo.xres_virtual * (vinfo.bits_per_pixel / 8);
-				offset += j * (vinfo.bits_per_pixel / 8);
 				struct color c;
 				c.red = rand() % 255;
 				c.green = rand() % 255;
 				c.blue = rand() % 255;
 				render_pixel(fbp, &vinfo, j, i, &c);
-				//*((uint32_t*)(fbp + offset)) = pixel_color(c.red, c.green, c.blue, &vinfo);
 			}
 		}
 		sleep(3);
