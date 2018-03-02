@@ -12,6 +12,12 @@
 #include <math.h>
 #include <signal.h>
 
+struct color {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+};
+
 int fb_fd;
 
 uint32_t pixel_color(uint8_t r, uint8_t g, uint8_t b, struct fb_var_screeninfo* vinfo) {
@@ -38,6 +44,14 @@ void signal_handler(int sig) {
 	exit(0);
 }
 
+void render_pixel(uint8_t* fbp, struct fb_var_screeninfo* vinfo, int x, int y, struct color* c) {
+    uint32_t width = vinfo->xres_virtual; 
+    // uint32_t height = vinfo.yres_virtual; 
+    int bytes_per_pixel = (int)vinfo->bits_per_pixel / 8;
+    int location = (y * width * bytes_per_pixel) + x * bytes_per_pixel;
+    *((uint32_t*)(fbp + location)) = pixel_color(c->red, c->green, c->blue, vinfo);
+}
+
 int main() {
 	struct fb_fix_screeninfo finfo;
 	struct fb_var_screeninfo vinfo;
@@ -57,10 +71,12 @@ int main() {
 			for (int j = 0; j < vinfo.xres_virtual; j++) {
 				int offset = i * vinfo.xres_virtual * (vinfo.bits_per_pixel / 8);
 				offset += j * (vinfo.bits_per_pixel / 8);
-				uint8_t red = rand() % 255;
-				uint8_t green = rand() % 255;
-				uint8_t blue = rand() % 255;
-				*((uint32_t*)(fbp + offset)) = pixel_color(red, green, blue, &vinfo);
+				struct color c;
+				c.red = rand() % 255;
+				c.green = rand() % 255;
+				c.blue = rand() % 255;
+				render_pixel(fbp, &vinfo, j, i, &c);
+				//*((uint32_t*)(fbp + offset)) = pixel_color(c.red, c.green, c.blue, &vinfo);
 			}
 		}
 		sleep(3);
